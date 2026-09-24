@@ -190,6 +190,52 @@ const ESRI_SATELLITE_STYLE: any = {
   ]
 };
 
+export const CARTO_DARK_STYLE: any = {
+  version: 8,
+  sources: {
+    'carto-dark': {
+      type: 'raster',
+      tiles: [
+        'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png'
+      ],
+      tileSize: 256,
+      attribution: '&copy; CARTO'
+    }
+  },
+  layers: [
+    {
+      id: 'carto-dark-layer',
+      type: 'raster',
+      source: 'carto-dark',
+      minzoom: 0,
+      maxzoom: 22
+    }
+  ]
+};
+
+export const CARTO_LIGHT_STYLE: any = {
+  version: 8,
+  sources: {
+    'carto-light': {
+      type: 'raster',
+      tiles: [
+        'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png'
+      ],
+      tileSize: 256,
+      attribution: '&copy; CARTO'
+    }
+  },
+  layers: [
+    {
+      id: 'carto-light-layer',
+      type: 'raster',
+      source: 'carto-light',
+      minzoom: 0,
+      maxzoom: 22
+    }
+  ]
+};
+
 export default function App() {
   const mapRef = useRef<MapRef>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -594,7 +640,7 @@ export default function App() {
       <div className="map-layer">
         <Map
           initialViewState={{ latitude: DEMO_LOCATION.lat, longitude: DEMO_LOCATION.lng, zoom: 14.5 }}
-          mapStyle={mapType === 'satellite' ? ESRI_SATELLITE_STYLE : theme === 'dark' ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/liberty"}
+          mapStyle={mapType === 'satellite' ? ESRI_SATELLITE_STYLE : theme === 'dark' ? CARTO_DARK_STYLE : CARTO_LIGHT_STYLE}
           ref={mapRef}
           style={{ width: '100%', height: '100%' }}
         >
