@@ -14,9 +14,11 @@ import {
   Lock,
   MapPin,
   Navigation,
+  Plus,
   RefreshCw,
   Search,
   Send,
+  Shield,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -28,6 +30,8 @@ import {
   Map as MapIcon,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import AddMissingPlace from './components/AddMissingPlace';
+import AdminPanel from './components/AdminPanel';
 
 // Import local OSM GeoJSON
 import osmData1 from './data/export.json';
@@ -70,10 +74,11 @@ interface Facility {
   last_verified_at: string | null;
   name?: string;
   distance_meters?: number;
-  data_source: 'live' | 'osm' | 'demo';
+  data_source: 'live' | 'osm' | 'demo' | 'community';
   condition_known: boolean;
   gender?: 'male' | 'female' | 'unisex';
   is_baby_friendly?: boolean;
+  source?: string;
 }
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -207,6 +212,8 @@ export default function App() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [mapType, setMapType] = useState<'standard' | 'satellite'>('standard');
   const [restroomFilter, setRestroomFilter] = useState<'all' | 'male' | 'female' | 'unisex' | 'accessible'>('all');
+  const [showAddPlace, setShowAddPlace] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('jalsaaf_theme');
@@ -339,11 +346,38 @@ export default function App() {
         const liveIds = new Set(liveParsed.map(f => f.id));
         const filteredOsm = osmFacilities.filter(f => !liveIds.has(f.id));
         const filteredFallback = fallbackFacilities.filter(f => !liveIds.has(f.id));
+
+        // Also fetch approved community facilities
+        let communityFacilities: Facility[] = [];
+        try {
+          const { data: communityData } = await supabase
+            .from('facilities')
+            .select('*')
+            .eq('source', 'community')
+            .limit(100);
+          if (communityData && communityData.length > 0) {
+            communityFacilities = communityData.map((row: any) => ({
+              id: row.id,
+              type: row.type === 'drinking_water' ? 'water' : row.type,
+              lat: row.latitude || 10.007,
+              lng: row.longitude || 76.365,
+              name: row.name || 'Community Facility',
+              is_accessible: row.accessibility === 'wheelchair',
+              status: row.status || 'usable',
+              confidence_score: 0.70,
+              last_verified_at: row.last_verified_at,
+              data_source: 'community' as const,
+              condition_known: true,
+              source: 'community',
+            }));
+          }
+        } catch { /* silently continue */ }
+        const communityIds = new Set(communityFacilities.map(f => f.id));
         
         if (liveParsed.length === 0) {
-          setFacilities([...filteredOsm, ...filteredFallback]);
+          setFacilities([...filteredOsm, ...filteredFallback, ...communityFacilities.filter(f => !liveIds.has(f.id))]);
         } else {
-          setFacilities([...liveParsed, ...filteredOsm]);
+          setFacilities([...liveParsed.filter(f => !communityIds.has(f.id)), ...filteredOsm, ...communityFacilities.filter(f => !liveIds.has(f.id))]);
         }
       } catch (err) {
         console.error("Supabase RPC failed:", err);
@@ -385,7 +419,7 @@ export default function App() {
       .filter(f => filter === 'all' || f.type === filter)
       .filter(f => {
         if (sourceFilter === 'all') return true;
-        if (sourceFilter === 'real') return f.data_source === 'osm' || f.data_source === 'live';
+        if (sourceFilter === 'real') return f.data_source === 'osm' || f.data_source === 'live' || f.data_source === 'community';
         return f.data_source === 'demo';
       })
       .filter(f => statusFilter === 'all' || (statusFilter === 'issues' ? isIssue(f) : !isIssue(f)))
@@ -612,6 +646,14 @@ export default function App() {
         </div>
         <button
           className="ml-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 transition-colors"
+          onClick={() => setShowAdminPanel(true)}
+          title="Admin Panel"
+          aria-label="Admin Panel"
+        >
+          <Shield size={18} />
+        </button>
+        <button
+          className="ml-2 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 transition-colors"
           onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
           title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Bright Mode'}
           aria-label={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Bright Mode'}
@@ -698,6 +740,14 @@ export default function App() {
           <Search size={18} />
           <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search facilities..." aria-label="Search facilities" />
           {searchQuery && <button onClick={() => setSearchQuery('')} aria-label="Clear search"><X size={16} /></button>}
+        </div>
+
+        {/* Add Missing Place Button — Desktop */}
+        <div className="hidden md:flex px-4 mb-2">
+          <button className="amp-fab" onClick={() => setShowAddPlace(true)}>
+            <Plus size={16} />
+            <span className="amp-fab-text">Add missing place</span>
+          </button>
         </div>
 
         <div className="flex justify-between items-center px-4 mb-3 mt-2">
@@ -790,6 +840,7 @@ export default function App() {
                       {f.data_source === 'osm' && <span className="src-badge src-osm">● OSM mapped</span>}
                       {f.data_source === 'live' && <span className="src-badge src-live">● Live network</span>}
                       {f.data_source === 'demo' && <span className="src-badge src-demo">● Demo fallback</span>}
+                      {f.data_source === 'community' && <span className="src-badge src-community">● Community Added</span>}
                     </div>
                     <button className="report-button" onClick={(e) => { e.stopPropagation(); setReportingFacility(f); }}><AlertTriangle size={14} /> Report</button>
                     <a className="route-button" href={`https://www.google.com/maps/dir/?api=1&destination=${f.lat},${f.lng}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>Route <Navigation size={14} /></a>
@@ -1079,6 +1130,28 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Mobile FAB for Add Missing Place */}
+      <button className="amp-fab md:hidden" onClick={() => setShowAddPlace(true)}>
+        <Plus size={16} />
+        <span className="amp-fab-text">Add place</span>
+      </button>
+
+      {/* Add Missing Place Modal */}
+      <AddMissingPlace
+        isOpen={showAddPlace}
+        onClose={() => setShowAddPlace(false)}
+        userLocation={userLocation}
+        theme={theme}
+      />
+
+      {/* Admin Panel */}
+      <AdminPanel
+        isOpen={showAdminPanel}
+        onClose={() => setShowAdminPanel(false)}
+        theme={theme}
+        onFacilityApproved={() => window.location.reload()}
+      />
     </main>
   );
 }

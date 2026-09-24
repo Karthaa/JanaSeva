@@ -104,3 +104,38 @@ export function timeAgo(dateStr: string): string {
   if (diffDays < 7) return `${diffDays}d ago`;
   return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
+
+// ===== Community Facility Submission Types =====
+
+export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
+
+export type SubmissionAccessibility = 'wheelchair' | 'limited' | 'unknown';
+
+export type FacilitySource = 'network' | 'community' | 'osm' | 'demo';
+
+export interface FacilitySubmission {
+  id: string;
+  name: string;
+  type: FacilityType; // 'toilet' | 'drinking_water'
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  landmark: string | null;
+  description: string | null;
+  accessibility: SubmissionAccessibility;
+  submitted_by: string | null;
+  submitted_at: string;
+  status: SubmissionStatus;
+  admin_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  approved_facility_id: string | null;
+  source: string;
+}
+
+export interface NearbyFacilityDuplicate {
+  id: string;
+  name: string;
+  type: string;
+  distance_m: number;
+}
