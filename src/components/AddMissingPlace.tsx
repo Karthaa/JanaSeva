@@ -182,8 +182,8 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
   if (!isOpen) return null;
 
   const mapStyle = theme === 'dark'
-    ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-    : 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+    ? 'https://tiles.openfreemap.org/styles/dark'
+    : 'https://tiles.openfreemap.org/styles/liberty';
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 110 }}>

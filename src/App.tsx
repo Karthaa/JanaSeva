@@ -594,7 +594,7 @@ export default function App() {
       <div className="map-layer">
         <Map
           initialViewState={{ latitude: DEMO_LOCATION.lat, longitude: DEMO_LOCATION.lng, zoom: 14.5 }}
-          mapStyle={mapType === 'satellite' ? ESRI_SATELLITE_STYLE : theme === 'dark' ? "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json" : "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json"}
+          mapStyle={mapType === 'satellite' ? ESRI_SATELLITE_STYLE : theme === 'dark' ? "https://tiles.openfreemap.org/styles/dark" : "https://tiles.openfreemap.org/styles/liberty"}
           ref={mapRef}
           style={{ width: '100%', height: '100%' }}
         >
