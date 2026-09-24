@@ -15,7 +15,6 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import { CARTO_DARK_STYLE, CARTO_LIGHT_STYLE } from '../App';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -182,7 +181,9 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
 
   if (!isOpen) return null;
 
-  const mapStyle = theme === 'dark' ? CARTO_DARK_STYLE : CARTO_LIGHT_STYLE;
+  const mapStyle = theme === 'dark'
+    ? 'https://tiles.openfreemap.org/styles/dark'
+    : 'https://tiles.openfreemap.org/styles/liberty';
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose} style={{ zIndex: 110 }}>
