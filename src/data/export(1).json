@@ -1,0 +1,38 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2026-09-23T14:26:20Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7086050457",
+        "amenity": "drinking_water"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2211168,
+          10.0323146
+        ]
+      },
+      "id": "node/7086050457"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7540036106",
+        "amenity": "drinking_water"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          76.2082801,
+          10.0910344
+        ]
+      },
+      "id": "node/7540036106"
+    }
+  ]
+}
