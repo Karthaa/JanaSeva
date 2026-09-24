@@ -34,9 +34,10 @@ import osmData1 from './data/export.json';
 import osmData2 from './data/export(1).json';
 import osmData3 from './data/export(2).json';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey) : null as any;
 
 const DEMO_LOCATION = { lat: 10.0070408, lng: 76.3656069 }; // JAIN University / Nirmal Infopark
 
@@ -356,9 +357,10 @@ export default function App() {
   }, [userLocation]);
 
   useEffect(() => {
+    if (!supabase) return;
     const channel = supabase
       .channel('public:facilities')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'facilities' }, payload => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'facilities' }, (payload: any) => {
         const updated = payload.new;
         setFacilities(current => current.map(f => 
           f.id === updated.id ? { 
@@ -531,6 +533,27 @@ export default function App() {
       setIsVerifying(false);
     }
   };
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 text-center font-sans">
+        <div className="bg-white p-8 rounded-2xl shadow-[0_8px_30px_rgba(15,23,42,0.12)] max-w-md border border-slate-100">
+          <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h1 className="text-2xl font-bold text-slate-800 mb-3">Configuration Error</h1>
+          <p className="text-slate-600 mb-6 leading-relaxed">
+            The application cannot start because the following required Vercel environment variables are missing:
+          </p>
+          <div className="bg-slate-100 rounded-lg p-4 mb-6 text-left border border-slate-200">
+            <code className="block text-sm font-bold text-slate-700 mb-2">VITE_SUPABASE_URL</code>
+            <code className="block text-sm font-bold text-slate-700">VITE_SUPABASE_ANON_KEY</code>
+          </div>
+          <p className="text-sm text-slate-500">
+            Please configure these exact variable names in your Vercel Dashboard and trigger a new deployment.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="jal-root">
