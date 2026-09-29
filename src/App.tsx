@@ -28,8 +28,10 @@ import {
   Moon,
   Layers,
   Map as MapIcon,
+  Loader2,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
+import { getFreshLocation } from './lib/location';
 import AddMissingPlace from './components/AddMissingPlace';
 import AdminPanel from './components/AdminPanel';
 
@@ -191,7 +193,9 @@ export default function App() {
   const mapRef = useRef<MapRef>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [facilities, setFacilities] = useState<Facility[]>([]);
-  const [userLocation, setUserLocation] = useState(DEMO_LOCATION);
+  const [userLocation, setUserLocation] = useState({ ...DEMO_LOCATION, accuracy: 0, isDemo: true });
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'toilet' | 'water'>('all');
   const [sourceFilter, setSourceFilter] = useState<'all' | 'real' | 'demo'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'available' | 'issues'>('all');
@@ -297,13 +301,16 @@ export default function App() {
   }, [reportingFacility]);
 
   useEffect(() => {
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserLocation(DEMO_LOCATION),
-        { enableHighAccuracy: true },
-      );
-    }
+    const initLocation = async () => {
+      try {
+        const { latitude, longitude, accuracy } = await getFreshLocation(false, 5000);
+        setUserLocation({ lat: latitude, lng: longitude, accuracy, isDemo: false });
+      } catch (err: any) {
+        console.warn('Initial location failed, using demo fallback:', err.message);
+        setUserLocation({ ...DEMO_LOCATION, accuracy: 0, isDemo: true });
+      }
+    };
+    initLocation();
   }, []);
 
   useEffect(() => {
@@ -461,8 +468,26 @@ export default function App() {
     card?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
-  const recenter = () => {
-    mapRef.current?.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 15, duration: 800, essential: true });
+  const recenter = async () => {
+    setIsLocating(true);
+    setLocationError(null);
+    try {
+      // Require higher accuracy (150m) for manual locate
+      const { latitude, longitude, accuracy } = await getFreshLocation(true, 150);
+      setUserLocation({ lat: latitude, lng: longitude, accuracy, isDemo: false });
+      mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 16, duration: 800, essential: true });
+    } catch (err: any) {
+      console.warn('Manual locate failed:', err.message);
+      setLocationError(err.message || 'Could not determine location.');
+      setTimeout(() => setLocationError(null), 6000);
+      
+      // Do NOT snap to demo location if it fails. Only fly to last known good if any.
+      if (!userLocation.isDemo) {
+        mapRef.current?.flyTo({ center: [userLocation.lng, userLocation.lat], zoom: 15, duration: 800, essential: true });
+      }
+    } finally {
+      setIsLocating(false);
+    }
   };
 
   const handleReport = async (e: React.FormEvent) => {
@@ -598,12 +623,14 @@ export default function App() {
         >
           {/* Native navigation control removed in favor of unified UI stack */}
 
-          <Marker anchor="center" latitude={userLocation.lat} longitude={userLocation.lng}>
-            <div className="user-marker" aria-label="Your location">
-              <span className="user-marker-pulse" />
-              <span className="user-marker-core" />
-            </div>
-          </Marker>
+          {!userLocation.isDemo && (
+            <Marker anchor="center" latitude={userLocation.lat} longitude={userLocation.lng}>
+              <div className="user-marker" aria-label="Your location">
+                <span className="user-marker-pulse" />
+                <span className="user-marker-core" />
+              </div>
+            </Marker>
+          )}
 
           {processedFacilities.map(f => {
             const issue = isIssue(f);
@@ -699,11 +726,16 @@ export default function App() {
 
         {/* Recenter */}
         <button
-          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/80 bg-white/95 text-blue-600 shadow-[0_8px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl transition hover:bg-white hover:scale-[1.03] active:scale-95 dark:border-slate-700/50 dark:bg-slate-800/90 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] dark:text-blue-400 dark:hover:bg-slate-700 max-md:h-10 max-md:w-10"
+          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/80 bg-white/95 text-blue-600 shadow-[0_8px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl transition hover:bg-white hover:scale-[1.03] active:scale-95 dark:border-slate-700/50 dark:bg-slate-800/90 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] dark:text-blue-400 dark:hover:bg-slate-700 max-md:h-10 max-md:w-10 disabled:opacity-70"
           aria-label="Recenter map"
           onClick={recenter}
+          disabled={isLocating}
         >
-          <LocateFixed className="h-5 w-5 max-md:h-4 max-md:w-4" />
+          {isLocating ? (
+            <Loader2 className="h-5 w-5 animate-spin max-md:h-4 max-md:w-4" />
+          ) : (
+            <LocateFixed className="h-5 w-5 max-md:h-4 max-md:w-4" />
+          )}
         </button>
 
         {/* Map Type Toggle */}
@@ -1152,6 +1184,13 @@ export default function App() {
         theme={theme}
         onFacilityApproved={() => window.location.reload()}
       />
+
+      {locationError && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl bg-red-600/95 px-4 py-2.5 text-sm font-medium text-white shadow-xl backdrop-blur-sm transition-all duration-300">
+          <AlertTriangle size={16} className="shrink-0" />
+          <span>{locationError}</span>
+        </div>
+      )}
     </main>
   );
 }

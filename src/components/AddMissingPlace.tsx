@@ -15,6 +15,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { getFreshLocation } from '../lib/location';
 
 interface AddMissingPlaceProps {
   isOpen: boolean;
@@ -101,28 +102,17 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
     }
   }, [step]);
 
-  const handleUseCurrentLocation = useCallback(() => {
+  const handleUseCurrentLocation = useCallback(async () => {
     setGeoError(null);
-    if (!('geolocation' in navigator)) {
-      setGeoError('Geolocation is not supported by your browser.');
-      return;
+    try {
+      const { latitude, longitude } = await getFreshLocation(true, 150);
+      setForm(prev => ({ ...prev, latitude, longitude }));
+      setMapPinLocation({ lat: latitude, lng: longitude });
+      setLocationMethod('gps');
+      setGeoError(null);
+    } catch (err: any) {
+      setGeoError(err.message || 'Could not get location. Please try picking on map.');
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        setForm(prev => ({ ...prev, latitude: lat, longitude: lng }));
-        setMapPinLocation({ lat, lng });
-        setLocationMethod('gps');
-        setGeoError(null);
-      },
-      (err) => {
-        if (err.code === 1) setGeoError('Location access denied. Please enable location permissions or pick on map.');
-        else if (err.code === 2) setGeoError('Location unavailable. Please try picking on map.');
-        else setGeoError('Could not get location. Please try picking on map.');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
   }, []);
 
   const handleMapClick = useCallback((e: any) => {
