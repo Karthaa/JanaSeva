@@ -14,11 +14,7 @@ import {
   Send,
   AlertTriangle,
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null as any;
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface AddMissingPlaceProps {
   isOpen: boolean;
@@ -64,6 +60,7 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<any[]>([]);
   const [locationMethod, setLocationMethod] = useState<'gps' | 'map' | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [mapPinLocation, setMapPinLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -137,6 +134,31 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
     setGeoError(null);
   }, []);
 
+  const checkDuplicates = async (lat: number, lng: number) => {
+    if (!isSupabaseConfigured()) return;
+    try {
+      const { data, error } = await supabase.rpc('check_nearby_facilities', {
+        check_lat: lat,
+        check_lng: lng,
+        radius_m: 50, // Flag if there is something very close
+      });
+      if (!error && data && data.length > 0) {
+        setDuplicateWarning(data);
+      } else {
+        setDuplicateWarning([]);
+      }
+    } catch {
+      setDuplicateWarning([]);
+    }
+  };
+
+  const handleNext = () => {
+    if (step === 2 && form.latitude && form.longitude) {
+      checkDuplicates(form.latitude, form.longitude);
+    }
+    setStep(s => s + 1);
+  };
+
   const handleSubmit = async () => {
     if (!form.type || !form.latitude || !form.longitude || !form.name.trim()) {
       setSubmitError('Please fill in all required fields.');
@@ -147,8 +169,8 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
     setSubmitError(null);
 
     try {
-      if (!supabase) {
-        throw new Error('Database not configured.');
+      if (!isSupabaseConfigured()) {
+        throw new Error('Database not configured. Cannot submit.');
       }
 
       const { error } = await supabase.from('facility_submissions').insert({
@@ -172,7 +194,11 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
       setSubmitSuccess(true);
     } catch (err: any) {
       console.error('Submission error:', err);
-      setSubmitError(err.message || 'Failed to submit. Please try again.');
+      if (err.message && err.message.includes('Failed to fetch')) {
+        setSubmitError('Connection unavailable. Check your connection and try again.');
+      } else {
+        setSubmitError(err.message || 'This submission could not be saved. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -451,6 +477,22 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
                     )}
                   </div>
 
+                  {duplicateWarning.length > 0 && (
+                    <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-200 text-xs flex gap-3">
+                      <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                      <div>
+                        <strong className="block mb-1 text-[11px] uppercase tracking-wide">Possible Duplicates Found</strong>
+                        <p className="mb-2">There are facilities already mapped near this location:</p>
+                        <ul className="space-y-1">
+                          {duplicateWarning.map(d => (
+                            <li key={d.id} className="opacity-90">• {d.name} ({Math.round(d.distance_m)}m away)</li>
+                          ))}
+                        </ul>
+                        <p className="mt-2 font-bold">You can still submit this if you are sure it's a new, unmapped place.</p>
+                      </div>
+                    </div>
+                  )}
+
                   {submitError && (
                     <div className="amp-geo-error" style={{ marginTop: 12 }}>
                       <AlertTriangle size={14} />
@@ -464,7 +506,7 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
             {/* Footer navigation */}
             <div className="amp-footer">
               {step > 1 && (
-                <button className="amp-btn-back" onClick={() => setStep(s => s - 1)}>
+                <button className="amp-btn-back" onClick={() => setStep(s => s - 1)} disabled={isSubmitting}>
                   <ChevronLeft size={16} /> Back
                 </button>
               )}
@@ -473,7 +515,7 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
                 <button
                   className="amp-btn-next"
                   disabled={!canProceed()}
-                  onClick={() => setStep(s => s + 1)}
+                  onClick={handleNext}
                 >
                   Next <ChevronRight size={16} />
                 </button>

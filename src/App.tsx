@@ -29,7 +29,7 @@ import {
   Layers,
   Map as MapIcon,
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 import AddMissingPlace from './components/AddMissingPlace';
 import AdminPanel from './components/AdminPanel';
 
@@ -37,11 +37,6 @@ import AdminPanel from './components/AdminPanel';
 import osmData1 from './data/export.json';
 import osmData2 from './data/export(1).json';
 import osmData3 from './data/export(2).json';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
-const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey) : null as any;
 
 const DEMO_LOCATION = { lat: 10.0070408, lng: 76.3656069 }; // JAIN University / Nirmal Infopark
 

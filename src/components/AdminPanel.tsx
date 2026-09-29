@@ -16,12 +16,8 @@ import {
   LogIn,
   LogOut,
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { FacilitySubmission, NearbyFacilityDuplicate } from '../types';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabaseUrl, supabaseAnonKey) : null as any;
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -172,7 +168,10 @@ export default function AdminPanel({ isOpen, onClose, theme: _theme, onFacilityA
   // Login handler
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supabase) return;
+    if (!isSupabaseConfigured()) {
+      setLoginError('Database not configured. Cannot log in.');
+      return;
+    }
     setLoginLoading(true);
     setLoginError(null);
 
@@ -183,7 +182,11 @@ export default function AdminPanel({ isOpen, onClose, theme: _theme, onFacilityA
       });
       if (error) throw error;
     } catch (err: any) {
-      setLoginError(err.message || 'Login failed.');
+      if (err.message && err.message.includes('Failed to fetch')) {
+        setLoginError('Connection unavailable. Check your connection and try again.');
+      } else {
+        setLoginError(err.message || 'Login failed.');
+      }
     } finally {
       setLoginLoading(false);
     }
@@ -200,7 +203,7 @@ export default function AdminPanel({ isOpen, onClose, theme: _theme, onFacilityA
 
   // Approve handler
   const handleApprove = async () => {
-    if (!supabase || !selectedSubmission) return;
+    if (!isSupabaseConfigured() || !selectedSubmission) return;
     setActionLoading(true);
     setActionError(null);
 
@@ -254,7 +257,11 @@ export default function AdminPanel({ isOpen, onClose, theme: _theme, onFacilityA
       onFacilityApproved?.();
     } catch (err: any) {
       console.error('Approval error:', err);
-      setActionError(err.message || 'Failed to approve submission.');
+      if (err.message && err.message.includes('Failed to fetch')) {
+        setActionError('Connection unavailable. Check your connection and try again.');
+      } else {
+        setActionError(err.message || 'Failed to approve submission.');
+      }
     } finally {
       setActionLoading(false);
     }
@@ -262,7 +269,7 @@ export default function AdminPanel({ isOpen, onClose, theme: _theme, onFacilityA
 
   // Reject handler
   const handleReject = async () => {
-    if (!supabase || !selectedSubmission) return;
+    if (!isSupabaseConfigured() || !selectedSubmission) return;
     setActionLoading(true);
     setActionError(null);
 
@@ -287,7 +294,11 @@ export default function AdminPanel({ isOpen, onClose, theme: _theme, onFacilityA
       fetchSubmissions();
     } catch (err: any) {
       console.error('Rejection error:', err);
-      setActionError(err.message || 'Failed to reject submission.');
+      if (err.message && err.message.includes('Failed to fetch')) {
+        setActionError('Connection unavailable. Check your connection and try again.');
+      } else {
+        setActionError(err.message || 'Failed to reject submission.');
+      }
     } finally {
       setActionLoading(false);
     }
