@@ -93,6 +93,17 @@ export default function AddMissingPlace({ isOpen, onClose, userLocation, theme }
     }
   }, [isOpen]);
 
+  // Resize the location picker map when it becomes visible (step 2)
+  useEffect(() => {
+    if (step === 2 && locationMapRef.current) {
+      // Small delay to let the container render with dimensions
+      const timer = setTimeout(() => {
+        locationMapRef.current?.resize();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
+
   const handleUseCurrentLocation = useCallback(() => {
     setGeoError(null);
     if (!('geolocation' in navigator)) {

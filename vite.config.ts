@@ -4,9 +4,6 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  optimizeDeps: {
-    exclude: ['maplibre-gl'],
-  },
   plugins: [
     react(),
     tailwindcss(),

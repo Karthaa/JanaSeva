@@ -16,21 +16,22 @@ ALTER TABLE tickets
   ADD COLUMN IF NOT EXISTS other_issue TEXT;
 
 -- 2. Enable Realtime on facilities
-BEGIN;
-  -- Ensure publication exists
-  DO $$ 
-  BEGIN 
-      IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
-          CREATE PUBLICATION supabase_realtime;
-      END IF;
-  END $$;
-  
-  -- Add tables
+-- Ensure publication exists
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+        CREATE PUBLICATION supabase_realtime;
+    END IF;
+END $$;
+
+-- Add tables
+DO $$ 
+BEGIN
   ALTER PUBLICATION supabase_realtime ADD TABLE facilities;
   ALTER PUBLICATION supabase_realtime ADD TABLE tickets;
 EXCEPTION WHEN duplicate_object THEN
   NULL; -- Ignore if already added
-END;
+END $$;
 
 -- 3. Create Storage bucket for report images
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types) 

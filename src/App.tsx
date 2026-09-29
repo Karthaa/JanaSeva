@@ -679,21 +679,21 @@ export default function App() {
         </div>
       </div>
 
-      <div className="absolute top-5 right-5 z-30 flex flex-col items-end gap-3">
+      <div className="absolute top-5 right-5 z-30 flex flex-col items-end gap-2 max-md:top-[72px] max-md:right-2.5 max-md:gap-2">
         {/* Map status + zoom */}
-        <div className="flex items-center overflow-hidden rounded-2xl border border-white/80 bg-white/95 shadow-[0_8px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl">
-          <div className="flex h-11 items-center gap-2 px-4">
-            <span className={`h-2.5 w-2.5 rounded-full ${isLiveConnected ? 'bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]' : 'bg-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.15)]'}`} />
-            <span className="text-[11px] font-bold text-slate-700">
+        <div className="flex items-center overflow-hidden rounded-2xl border border-white/80 bg-white/95 shadow-[0_8px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-800/90 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+          <div className="flex h-10 items-center gap-1.5 px-3 max-md:h-9 max-md:px-2">
+            <span className={`h-2 w-2 rounded-full ${isLiveConnected ? 'bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]' : 'bg-amber-400 shadow-[0_0_0_3px_rgba(251,191,36,0.15)]'}`} />
+            <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 max-md:hidden">
               {isLiveConnected ? 'Network online' : 'Live data unavailable'}
             </span>
-            <span className="mx-1 h-4 w-px bg-slate-200" />
-            <span className="text-[11px] font-black text-slate-800">
-              {stats.total || 0} mapped
+            <span className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-600 max-md:hidden" />
+            <span className="text-[10px] font-black text-slate-800 dark:text-slate-200">
+              {stats.total || 0} <span className="max-md:hidden">mapped</span>
             </span>
           </div>
           <button
-            className="flex h-11 w-11 items-center justify-center border-l border-slate-100 text-slate-800 transition hover:bg-slate-50 active:scale-95"
+            className="flex h-10 w-10 items-center justify-center border-l border-slate-100 dark:border-slate-600 text-slate-800 dark:text-slate-200 transition hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 max-md:h-9 max-md:w-9"
             aria-label="Zoom in"
             onClick={() => mapRef.current?.zoomIn({ duration: 300 })}
           >
@@ -703,20 +703,20 @@ export default function App() {
 
         {/* Recenter */}
         <button
-          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/80 bg-white/95 text-blue-600 shadow-[0_8px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl transition hover:bg-white hover:scale-[1.03] active:scale-95 dark:border-slate-700/50 dark:bg-slate-800/90 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] dark:text-blue-400 dark:hover:bg-slate-700"
+          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/80 bg-white/95 text-blue-600 shadow-[0_8px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl transition hover:bg-white hover:scale-[1.03] active:scale-95 dark:border-slate-700/50 dark:bg-slate-800/90 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] dark:text-blue-400 dark:hover:bg-slate-700 max-md:h-10 max-md:w-10"
           aria-label="Recenter map"
           onClick={recenter}
         >
-          <LocateFixed className="h-5 w-5" />
+          <LocateFixed className="h-5 w-5 max-md:h-4 max-md:w-4" />
         </button>
 
         {/* Map Type Toggle */}
         <button
-          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/80 bg-white/95 text-slate-700 shadow-[0_8px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl transition hover:bg-white hover:scale-[1.03] active:scale-95 dark:border-slate-700/50 dark:bg-slate-800/90 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] dark:text-slate-300 dark:hover:bg-slate-700"
+          className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/80 bg-white/95 text-slate-700 shadow-[0_8px_30px_rgba(15,23,42,0.12)] backdrop-blur-xl transition hover:bg-white hover:scale-[1.03] active:scale-95 dark:border-slate-700/50 dark:bg-slate-800/90 dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] dark:text-slate-300 dark:hover:bg-slate-700 max-md:h-10 max-md:w-10"
           aria-label="Toggle map style"
           onClick={() => setMapType(mapType === 'standard' ? 'satellite' : 'standard')}
         >
-          {mapType === 'standard' ? <Layers className="h-5 w-5" /> : <MapIcon className="h-5 w-5" />}
+          {mapType === 'standard' ? <Layers className="h-5 w-5 max-md:h-4 max-md:w-4" /> : <MapIcon className="h-5 w-5 max-md:h-4 max-md:w-4" />}
         </button>
       </div>
 
