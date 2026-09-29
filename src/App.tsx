@@ -216,6 +216,7 @@ export default function App() {
   const [restroomFilter, setRestroomFilter] = useState<'all' | 'male' | 'female' | 'unisex' | 'accessible'>('all');
   const [showAddPlace, setShowAddPlace] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
   
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('jalsaaf_theme');
@@ -720,9 +721,10 @@ export default function App() {
         </button>
       </div>
 
-      <section className="facility-panel">
+      <section className={`facility-panel ${isPanelExpanded ? 'expanded' : ''}`}>
+        <div className="panel-grabber-area md:hidden" onClick={() => setIsPanelExpanded(!isPanelExpanded)} />
         <div className="panel-grabber" />
-        <div className="panel-head">
+        <div className="panel-head" onClick={() => setIsPanelExpanded(true)}>
           <div>
             <div className="eyebrow"><span className="eyebrow-dot" /> NEAR YOU</div>
             <h2>Public essentials</h2>
@@ -731,34 +733,35 @@ export default function App() {
           <button className="refresh-button" onClick={() => window.location.reload()} aria-label="Refresh data"><RefreshCw size={17} /></button>
         </div>
 
-        <div className="stats-row">
+        <div className="stats-row" onClick={() => setIsPanelExpanded(true)}>
           <div onClick={() => { setFilter('all'); setStatusFilter('all'); }} style={{cursor: 'pointer'}}><strong>{stats.total}</strong><span>Places</span></div>
           <div onClick={() => setFilter('water')} style={{cursor: 'pointer'}}><strong>{stats.water}</strong><span>Water</span></div>
           <div onClick={() => setFilter('toilet')} style={{cursor: 'pointer'}}><strong>{stats.restrooms}</strong><span>Restrooms</span></div>
           <div className="stat-alert" onClick={() => setStatusFilter('issues')} style={{cursor: 'pointer'}}><strong>{stats.issues}</strong><span>Needs attention</span></div>
         </div>
 
-        <div className="search-box">
-          <Search size={18} />
-          <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search facilities..." aria-label="Search facilities" />
-          {searchQuery && <button onClick={() => setSearchQuery('')} aria-label="Clear search"><X size={16} /></button>}
-        </div>
-
-        {/* Add Missing Place Button — Desktop */}
-        <div className="hidden md:flex px-4 mb-2">
-          <button className="amp-fab" onClick={() => setShowAddPlace(true)}>
-            <Plus size={16} />
-            <span className="amp-fab-text">Add missing place</span>
+        <div className="compact-controls-row">
+          <div className="search-box compact">
+            <Search size={14} />
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onFocus={() => setIsPanelExpanded(true)} placeholder="Search..." aria-label="Search facilities" />
+            {searchQuery && <button onClick={() => setSearchQuery('')} aria-label="Clear search"><X size={14} /></button>}
+          </div>
+          
+          <div className="segmented-control">
+            <button className={`${findMode === 'nearest' ? 'active' : ''}`} onClick={() => setFindMode('nearest')}>Nearest</button>
+            <button className={`${findMode === 'usable' ? 'active usable' : ''}`} onClick={() => setFindMode('usable')}>Usable</button>
+          </div>
+          
+          <button className="filter-toggle-btn" onClick={() => { setShowFilters(!showFilters); setIsPanelExpanded(true); }}>
+            {showFilters ? 'Hide' : 'Filters'}
           </button>
         </div>
 
-        <div className="flex justify-between items-center px-4 mb-3 mt-2">
-          <div className="flex gap-2">
-            <button className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${findMode === 'nearest' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} onClick={() => setFindMode('nearest')}>Nearest</button>
-            <button className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${findMode === 'usable' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} onClick={() => setFindMode('usable')}>Nearest Usable</button>
-          </div>
-          <button className="text-[11px] font-bold text-slate-500 underline uppercase tracking-wide" onClick={() => setShowFilters(!showFilters)}>
-            {showFilters ? 'Hide Filters' : 'More Filters'}
+        {/* Add Missing Place Button — Desktop */}
+        <div className="hidden md:flex px-4 mb-2 mt-1">
+          <button className="amp-fab" onClick={() => setShowAddPlace(true)}>
+            <Plus size={16} />
+            <span className="amp-fab-text">Add missing place</span>
           </button>
         </div>
 
