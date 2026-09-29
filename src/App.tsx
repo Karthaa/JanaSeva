@@ -250,12 +250,6 @@ export default function App() {
     const file = e.target.files?.[0];
     setPhotoError('');
     if (!file) return;
-
-    console.log({
-      name: file.name,
-      type: file.type,
-      size: file.size
-    });
     if (!file.type.startsWith('image/')) {
       setPhotoError('Please select a valid image file.');
       return;
@@ -451,7 +445,7 @@ export default function App() {
         }
         return (a.distance_meters || 0) - (b.distance_meters || 0);
       });
-  }, [facilities, userLocation, filter, sourceFilter, statusFilter, accessibilityFilter, findMode, searchQuery]);
+  }, [facilities, userLocation, filter, restroomFilter, sourceFilter, statusFilter, accessibilityFilter, findMode, searchQuery]);
 
   const stats = useMemo(() => ({
     total: processedFacilities.length,
@@ -519,11 +513,9 @@ export default function App() {
 
         let uploadedPhotoPath = null;
         if (reportData.photo) {
-          const safeName = reportData.photo.name.replace(/[^a-zA-Z0-9.\-]/g, '_');
+          const safeName = reportData.photo.name.replace(/[^a-zA-Z0-9.-]/g, '_');
           const fileName = `${Date.now()}-${safeName}`;
           const filePath = `reports/${dbTicket.id}/${fileName}`;
-          
-          console.log('Uploading photo:', { name: reportData.photo.name, size: reportData.photo.size, path: filePath });
           
           const { error: uploadError } = await supabase.storage
             .from('report-images')
@@ -536,7 +528,6 @@ export default function App() {
           }
           
           uploadedPhotoPath = filePath;
-          console.log('Photo uploaded successfully to:', uploadedPhotoPath);
           
           // 2. Update the DB record with the photo path
           const { error: updateError } = await supabase.from('tickets')

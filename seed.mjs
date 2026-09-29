@@ -1,5 +1,4 @@
 // Node script to seed Supabase with 5 facilities near 9.9312, 76.2673
-import fs from 'fs';
 import 'dotenv/config';
 
 const SUPABASE_URL = 'https://ijofvlvmngxcyzyabfrd.supabase.co';
